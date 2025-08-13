@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Font Analysis</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <h1>Badge Magic Config Generator</h1>
+
+        <div class="mode-selector">
+            <label>
+                <input type="radio" name="mode" value="text" checked>
+                <span>文字模式</span>
+            </label>
+            <label>
+                <input type="radio" name="mode" value="image">
+                <span>圖片模式</span>
+            </label>
+        </div>
+
+        <div id="text-mode-content">
+            <input type="text" id="text-input" value="俐方体11號" placeholder="輸入要分析的文字...">
+        </div>
+
+        <div id="image-mode-content" style="display: none;">
+            <div id="image-drop-zone">
+                <p>將圖片拖曳至此，或點擊選擇檔案</p>
+                <input type="file" id="image-input" accept="image/*" style="display: none;">
+                <canvas id="image-preview-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="preview-controls">
+            <label>
+                <input type="radio" name="preview-toggle" value="marquee" checked>
+                <span>跑馬燈預覽</span>
+            </label>
+            <label>
+                <input type="radio" name="preview-toggle" value="text">
+                <span>文字預覽</span>
+            </label>
+        </div>
+
+        <div id="text-preview" class="preview-container" style="display: none;">
+            <canvas id="font-canvas"></canvas>
+        </div>
+        <div id="marquee-preview" class="preview-container">
+            <div id="svg-container"></div>
+        </div>
+
+        <div class="controls-container">
+            <div class="control-group">
+                <label>方向:</label>
+                <div class="radio-pills">
+                    <input type="radio" name="direction" value="left" id="dir-left" checked>
+                    <label for="dir-left">左</label>
+                    <input type="radio" name="direction" value="right" id="dir-right">
+                    <label for="dir-right">右</label>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="speed-slider">速度:</label>
+                <input type="range" id="speed-slider" min="1" max="8" value="1">
+                <span id="speed-value">1</span>
+            </div>
+        </div>
+
+        <button id="download-btn">下載 JSON</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
