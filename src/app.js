@@ -126,10 +126,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
     window.addEventListener('paste', (e) => {
-        if (appState.mode === 'image' && e.clipboardData.files && e.clipboardData.files.length > 0) {
-             if (e.clipboardData.files.type.startsWith('image/')) {
-                handleImageFile(e.clipboardData.files, onMatrixProcessed);
-             }
+        if (appState.mode !== 'image' || !e.clipboardData.files || e.clipboardData.files.length === 0) {
+            return;
+        }
+
+        const imageFiles = Array.from(e.clipboardData.files).filter(file => file.type.startsWith('image/'));
+
+        if (imageFiles.length > 0) {
+            handleImageFile(imageFiles, onMatrixProcessed);
         }
     });
 
