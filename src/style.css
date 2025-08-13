@@ -32,7 +32,7 @@ body {
   padding: 20px;
 }
 
-.app-container {
+main.app-container {
   width: 100%;
   max-width: 600px;
   background-color: var(--container-color);
@@ -124,34 +124,34 @@ h1 {
   width: auto;
 }
 
-.controls-container {
+section.controls-container {
   margin-top: 20px;
   padding: 20px;
   border-radius: 8px;
   background-color: var(--primary-color);
 }
 
-.control-group {
+.controls-container__group {
   margin-bottom: 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.control-group:last-child {
+.controls-container__group:last-child {
   margin-bottom: 0;
 }
 
-.control-group label {
+.controls-container__group label {
   margin-right: 10px;
   font-weight: bold;
 }
 
-.control-group input[type="radio"] {
+.controls-container__group input[type="radio"] {
   display: none;
 }
 
-.control-group .radio-pills label {
+.controls-container__group .radio-pills label {
   cursor: pointer;
   padding: 5px 15px;
   border-radius: 20px;
@@ -159,7 +159,7 @@ h1 {
   transition: background-color 0.3s, color 0.3s;
 }
 
-.control-group .radio-pills input[type="radio"]:checked+label {
+.controls-container__group .radio-pills input[type="radio"]:checked+label {
   background-color: var(--accent-color);
   color: var(--background-color);
 }
