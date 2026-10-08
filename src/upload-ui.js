@@ -17,7 +17,21 @@ function saveFirmware(firmware) {
   } catch (e) { /* storage unavailable */ }
 }
 
+// Web Bluetooth rejects with NotFoundError both when the chooser is closed
+// and when Bluetooth is blocked or missing, so tell them apart by message.
+function isCancelled(err) {
+  return err?.name === 'AbortError'
+    || (err?.name === 'NotFoundError' && /cancel/i.test(err.message));
+}
+
 function describeError(err) {
+  const message = err?.message || String(err);
+  if (/permission/i.test(message)) {
+    return '瀏覽器封鎖了這個網站的藍牙權限。請在網址列左邊的網站設定把「藍牙」改成允許；Brave 還需要到 brave://flags 開啟 Web Bluetooth API。';
+  }
+  if (/adapter/i.test(message)) {
+    return '找不到藍牙介面卡，請確認電腦的藍牙已開啟。';
+  }
   switch (err?.name) {
     case 'SecurityError':
       return '瀏覽器拒絕存取裝置，請確認網頁是用 HTTPS 開啟。';
@@ -26,7 +40,7 @@ function describeError(err) {
     case 'NotAllowedError':
       return '無法開啟 USB 裝置，可能被其他程式佔用。';
     default:
-      return err?.message || String(err);
+      return message;
   }
 }
 
@@ -140,8 +154,7 @@ export function initUploadPanel(getMessages) {
         ? '上傳完成！'
         : '上傳完成！在徽章選單選 ANIMATION 就能看到。';
     } catch (err) {
-      // Closing the device chooser rejects with NotFoundError
-      if (err?.name === 'NotFoundError') {
+      if (isCancelled(err)) {
         status.textContent = '已取消。';
       } else {
         status.textContent = '';

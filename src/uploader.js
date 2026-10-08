@@ -91,7 +91,7 @@ async function uploadUsb(payload, onProgress) {
     filters: [{ vendorId: USB_VENDOR_ID, productId: USB_PRODUCT_ID }],
   });
   if (!device) {
-    throw new DOMException('沒有選擇裝置', 'NotFoundError');
+    throw new DOMException('Device chooser cancelled', 'AbortError');
   }
 
   if (!device.opened) await device.open();
