@@ -1,5 +1,10 @@
 import { TARGET_HEIGHT, CHUNK_WIDTH } from './constants.js';
 
+// Badge Magic app: speed 1..8 is stored as "0x00".."0x70"
+function speedHex(speed) {
+  return `0x${speed - 1}0`;
+}
+
 export function convertMatrixToHexDisplay(matrix, direction, speed) {
   if (!matrix || matrix.length === 0) {
     return {
@@ -8,7 +13,7 @@ export function convertMatrixToHexDisplay(matrix, direction, speed) {
           text: [],
           flash: false,
           marquee: false,
-          speed: `0x${speed}0`,
+          speed: speedHex(speed),
           mode: direction === 'right' ? "0x01" : "0x00",
           invert: false,
         },
@@ -61,7 +66,7 @@ export function convertMatrixToHexDisplay(matrix, direction, speed) {
           text: finalHexStrings,
           flash: false,
           marquee: false,
-          speed: `0x${speed}0`,
+          speed: speedHex(speed),
           mode: direction === 'right' ? "0x01" : "0x00",
           invert: false
       }]
