@@ -3,12 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pixel Font Analysis</title>
+    <title>Badge Magic Config Generator</title>
     <link rel="stylesheet" href="src/style.css" />
   </head>
   <body>
     <main class="app-container">
       <h1>Badge Magic Config Generator</h1>
+
+      <nav class="page-tabs" aria-label="訊息">
+        <div class="page-tabs__list" id="page-tabs" role="tablist"></div>
+        <button type="button" id="page-add" class="page-tabs__add">＋ 新增</button>
+      </nav>
+      <div class="page-toolbar">
+        <span class="page-toolbar__title" id="page-title">訊息 1</span>
+        <span class="page-toolbar__hint">徽章上按 KEY2 切換訊息，最多 8 則</span>
+        <button type="button" id="page-delete" class="page-toolbar__delete">刪除這則</button>
+      </div>
 
       <div class="mode-selector">
         <label>
@@ -25,14 +35,18 @@
         <input
           type="text"
           id="text-input"
-          value="俐方体11號"
-          placeholder="輸入要分析的文字..."
+          placeholder="輸入要顯示的文字..."
         />
+        <div class="font-picker">
+          <label for="font-select">字體</label>
+          <select id="font-select"></select>
+          <span class="font-picker__status" id="font-status" role="status"></span>
+        </div>
       </div>
 
       <div id="image-mode-content" style="display: none">
         <div id="image-drop-zone">
-          <p>將圖片拖曳至此，或點擊選擇檔案</p>
+          <p>將圖片拖曳至此，或點擊選擇檔案（高度 11 像素）</p>
           <input
             type="file"
             id="image-input"
@@ -83,6 +97,17 @@
           <span id="speed-value">1</span>
         </div>
       </section>
+
+      <pre id="output-container"></pre>
+
+      <div class="capacity" id="capacity">
+        <div class="capacity__label">
+          <span>徽章容量</span>
+          <span id="capacity-text"></span>
+        </div>
+        <div class="capacity__meter"><div class="capacity__bar" id="capacity-bar"></div></div>
+        <p class="capacity__note" id="capacity-note"></p>
+      </div>
 
       <button id="download-btn">下載 JSON</button>
 

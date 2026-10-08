@@ -1,11 +1,10 @@
 import { TARGET_HEIGHT } from './constants.js';
 
-function analyzeImage(imageDataUrl, onMatrixProcessed) {
+function analyzeImage(imageDataUrl, onMatrixProcessed, onError) {
     const img = new Image();
     img.onload = () => {
       if (img.height !== TARGET_HEIGHT) {
-        // This should be handled by a more robust UI feedback system
-        console.error(`Image height must be ${TARGET_HEIGHT} pixels! (Currently ${img.height}px)`);
+        onError(`圖片高度必須是 ${TARGET_HEIGHT} 像素（目前是 ${img.height} 像素）`);
         return;
       }
 
@@ -31,24 +30,23 @@ function analyzeImage(imageDataUrl, onMatrixProcessed) {
       onMatrixProcessed(matrix);
     };
     img.onerror = () => {
-      // This should be handled by a more robust UI feedback system
-      console.error("Could not read image file.");
+      onError("無法讀取圖片檔案");
     };
     img.src = imageDataUrl;
 }
 
 
-export function handleImageFile(files, onMatrixProcessed) {
+export function handleImageFile(files, onMatrixProcessed, onError = console.error) {
     const file = files[0];
     if (!file || !file.type.startsWith("image/")) {
-        console.error("Please upload a valid image file!");
+        onError("請選擇圖片檔案");
         return;
     }
 
     const reader = new FileReader();
     reader.onload = (event) => {
         const imageDataUrl = event.target.result;
-        analyzeImage(imageDataUrl, onMatrixProcessed);
+        analyzeImage(imageDataUrl, onMatrixProcessed, onError);
     };
     reader.readAsDataURL(file);
 }

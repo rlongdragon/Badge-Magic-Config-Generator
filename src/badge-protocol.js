@@ -77,3 +77,8 @@ export function splitPackets(payload, size) {
   }
   return packets;
 }
+
+/** Bytes the badge has to hold for these messages (header + bitmap + padding). */
+export function payloadSize(messages) {
+  return buildLegacyPayload(messages).length;
+}

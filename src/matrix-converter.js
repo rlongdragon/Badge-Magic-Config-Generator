@@ -72,3 +72,14 @@ export function convertMatrixToHexDisplay(matrix, direction, speed) {
       }]
   };
 }
+
+// All non-empty pages, in order, as the app's JSON
+export function convertPagesToJson(pages) {
+  const messages = pages
+    .filter((page) => page.matrix.length > 0)
+    .map((page) => convertMatrixToHexDisplay(page.matrix, page.direction, page.speed).messages[0]);
+
+  return messages.length > 0
+    ? { messages }
+    : convertMatrixToHexDisplay([], 'left', 1);
+}

@@ -1,5 +1,7 @@
 import { FIRMWARE_PROFILES, TRANSPORTS, uploadToBadge } from './uploader.js';
 import { checkTransport, markPermissionBlocked, listenForChanges } from './browser-support.js';
+import { payloadSize } from './badge-protocol.js';
+import { MAX_PAYLOAD_BYTES } from './constants.js';
 
 const STORAGE_KEY = 'badge-upload';
 
@@ -86,6 +88,7 @@ export function initUploadPanel(getMessages) {
   let controller = null; // set while uploading
   let stage = null;
   let blockingProblem = false;
+  let tooLarge = false;
   let checkSeq = 0;
 
   function setStatus(text, kind = '') {
@@ -96,7 +99,7 @@ export function initUploadPanel(getMessages) {
   function renderButtons() {
     const busy = controller !== null;
     uploadBtn.textContent = `用${TRANSPORTS[transport].label}上傳`;
-    uploadBtn.disabled = busy || blockingProblem;
+    uploadBtn.disabled = busy || blockingProblem || tooLarge;
     uploadBtn.hidden = busy;
     // The browser's device chooser cannot be closed from script
     cancelBtn.hidden = !busy || stage === 'choose';
@@ -196,10 +199,28 @@ export function initUploadPanel(getMessages) {
     tabs.append(btn);
   });
 
+  // Called whenever the content changes
+  function refresh() {
+    const messages = getMessages();
+    const wasTooLarge = tooLarge;
+    tooLarge = Boolean(messages) && payloadSize(messages) > MAX_PAYLOAD_BYTES;
+    if (tooLarge) {
+      setStatus('內容超過徽章容量，無法上傳。請看上方的「徽章容量」。', 'error');
+    } else if (wasTooLarge) {
+      setStatus('');
+    }
+    if (!controller) renderButtons();
+  }
+
   uploadBtn.addEventListener('click', async () => {
     const messages = getMessages();
     if (!messages || messages.every((m) => m.text.length === 0)) {
       setStatus('沒有可上傳的內容，請先輸入文字或選擇圖片。', 'error');
+      return;
+    }
+    // Last line of defence: an oversized upload can crash the badge
+    if (payloadSize(messages) > MAX_PAYLOAD_BYTES) {
+      refresh();
       return;
     }
 
@@ -249,4 +270,6 @@ export function initUploadPanel(getMessages) {
 
   listenForChanges(() => renderAlert());
   renderFirmware();
+  refresh();
+  return { refresh };
 }

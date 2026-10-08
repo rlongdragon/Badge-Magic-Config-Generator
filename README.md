@@ -6,7 +6,9 @@
 
 ## 功能特色
 
+- **多則訊息**: 最多 8 則訊息，徽章上按 KEY2 切換，每則可各自設定方向與速度。
 - **雙模式輸入**: 支援「文字模式」與「圖片模式」，滿足不同需求。
+- **多種點陣字體**: 俐方體 11 號，以及透過 [emfont](https://font.emtech.cc) 載入的 Fusion Pixel 10px、Boutique Bitmap 9×9 / 7×7、Chill Bitmap 7px。
 - **即時預覽**: 提供 SVG 跑馬燈和文字點陣兩種預覽方式，即時驗證效果。
 - **參數可調**: 可自由調整跑馬燈的方向與速度。
 - **圖片支援**: 可直接拖曳、貼上或選擇圖片檔案，自動轉換為點陣圖。
@@ -34,6 +36,7 @@
 - 藍牙使用 Web Bluetooth：桌機或 Android 的 Chrome / Edge。iOS 與 Firefox 不支援。
 - USB 使用 WebHID：桌機的 Chrome / Edge。
 - 開源韌體要先在徽章選單選 **BT-PAIRING** 才能用藍牙上傳，上傳後選 **ANIMATION** 播放。
+- 上傳前會檢查大小：整包資料（header + 點陣）不能超過 2048 bytes。開源韌體的 malloc 沒有上限檢查，太大的資料會讓徽章當機，甚至因為資料已經存進去而每次開機都當機（要進 ISP 模式清除資料區才能救回）。
 - 上傳格式與 Badge Magic App 相同（`"wang"` header + 每 8 欄 11 bytes 的點陣），藍牙每包 16 bytes，USB 每個 report 64 bytes。
 
 ## 開發設定
