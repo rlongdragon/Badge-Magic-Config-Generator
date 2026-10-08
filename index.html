@@ -86,20 +86,33 @@
 
       <button id="download-btn">下載 JSON</button>
 
-      <section class="upload-container">
-        <h2>直接上傳到徽章</h2>
-        <div class="firmware-tabs" id="firmware-tabs" role="tablist"></div>
-        <p class="upload-note" id="firmware-note"></p>
-        <div class="controls-container__group">
-          <label>傳輸方式:</label>
-          <div class="radio-pills" id="transport-pills"></div>
+      <section class="upload-container" aria-labelledby="upload-title">
+        <h2 id="upload-title">直接上傳到徽章</h2>
+
+        <div class="upload-field">
+          <span class="upload-label" id="firmware-label">1. 徽章的韌體</span>
+          <div class="firmware-tabs" id="firmware-tabs" role="tablist" aria-labelledby="firmware-label"></div>
+          <p class="upload-hint" id="firmware-hint"></p>
         </div>
-        <p class="upload-note" id="transport-note"></p>
-        <button id="upload-btn">上傳</button>
+
+        <div class="upload-field">
+          <span class="upload-label" id="transport-label">2. 傳輸方式</span>
+          <div class="transport-options" id="transport-options" role="radiogroup" aria-labelledby="transport-label"></div>
+        </div>
+
+        <div class="upload-alert" id="upload-alert" role="alert" hidden></div>
+
+        <div class="upload-field">
+          <span class="upload-label">3. 照著做</span>
+          <ol class="upload-steps" id="upload-steps"></ol>
+        </div>
+
+        <button id="upload-btn" class="upload-btn">上傳</button>
+        <button id="upload-cancel" class="upload-cancel" hidden>取消上傳</button>
         <div class="upload-progress" id="upload-progress" hidden>
           <div class="upload-progress__bar" id="upload-progress-bar"></div>
         </div>
-        <p class="upload-status" id="upload-status" role="status"></p>
+        <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
       </section>
     </main>
 

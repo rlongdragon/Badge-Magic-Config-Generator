@@ -334,12 +334,33 @@ section.upload-container {
   margin-bottom: 15px;
 }
 
+.upload-field {
+  margin-bottom: 18px;
+}
+
+.upload-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.upload-hint {
+  margin-top: 8px;
+  font-size: 0.9em;
+  line-height: 1.5;
+  color: #555;
+}
+
+.upload-hint a {
+  color: var(--accent-color);
+}
+
+/* Firmware tabs */
 .firmware-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   padding: 5px;
-  margin-bottom: 10px;
   border-radius: 20px;
   background-color: var(--container-color);
 }
@@ -356,46 +377,165 @@ section.upload-container {
   transition: background-color 0.3s, color 0.3s;
 }
 
+.firmware-tabs button:hover:not(.active):not(:disabled) {
+  background-color: var(--primary-color);
+}
+
 .firmware-tabs button.active {
   background-color: var(--accent-color);
   color: var(--background-color);
 }
 
-.upload-note {
-  margin-bottom: 15px;
+.firmware-tabs button:disabled {
+  cursor: not-allowed;
+}
+
+/* Transport cards */
+.transport-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.transport-options input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.transport-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-color: var(--container-color);
+  cursor: pointer;
+  transition: border-color 0.3s, opacity 0.3s;
+}
+
+.transport-option__name {
+  font-weight: bold;
+}
+
+.transport-option__meta {
+  font-size: 0.85em;
+  color: #666;
+}
+
+.transport-options input:checked + .transport-option {
+  border-color: var(--accent-color);
+}
+
+.transport-options input:checked + .transport-option .transport-option__name {
+  color: var(--accent-color);
+}
+
+.transport-options input:focus-visible + .transport-option {
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.4);
+}
+
+.transport-options input:disabled + .transport-option {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Browser support alert */
+.upload-alert {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-left: 4px solid;
+  border-radius: 6px;
   font-size: 0.9em;
   line-height: 1.5;
 }
 
-.upload-note a {
-  color: var(--accent-color);
+.upload-alert[hidden] {
+  display: none;
 }
 
-.upload-note--warn {
-  color: #c62828;
+.upload-alert--error {
+  border-color: #d32f2f;
+  background-color: #fdecea;
+  color: #8a1c1c;
 }
 
-#upload-btn {
+.upload-alert--warn {
+  border-color: #f0a000;
+  background-color: #fff6e0;
+  color: #6b4b00;
+}
+
+.upload-alert strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.upload-alert code {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.06);
+  font-family: 'Courier New', Courier, monospace;
+  word-break: break-all;
+  user-select: all;
+}
+
+/* Steps */
+.upload-steps {
+  padding-left: 1.4em;
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+
+.upload-steps li + li {
+  margin-top: 4px;
+}
+
+/* Actions */
+.upload-btn,
+.upload-cancel {
   display: block;
   width: 100%;
   padding: 12px;
   font-size: 16px;
   font-weight: bold;
-  color: var(--light-text-color);
-  background-color: var(--accent-color);
-  border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
-#upload-btn:hover:not(:disabled) {
+.upload-btn {
+  color: var(--light-text-color);
+  background-color: var(--accent-color);
+  border: none;
+}
+
+.upload-btn:hover:not(:disabled) {
   background-color: #3a7bc8;
 }
 
-#upload-btn:disabled {
+.upload-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.upload-cancel {
+  color: var(--text-color);
+  background-color: var(--container-color);
+  border: 2px solid var(--border-color);
+}
+
+.upload-cancel:hover {
+  background-color: var(--background-color);
+}
+
+.upload-btn[hidden],
+.upload-cancel[hidden],
+.upload-progress[hidden] {
+  display: none;
 }
 
 .upload-progress {
@@ -404,10 +544,6 @@ section.upload-container {
   border-radius: 3px;
   background-color: var(--container-color);
   overflow: hidden;
-}
-
-.upload-progress[hidden] {
-  display: none;
 }
 
 .upload-progress__bar {
@@ -421,4 +557,20 @@ section.upload-container {
   margin-top: 10px;
   min-height: 1.5em;
   text-align: center;
+  line-height: 1.5;
+}
+
+.upload-status--success {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+.upload-status--error {
+  color: #c62828;
+}
+
+@media (max-width: 420px) {
+  .transport-options {
+    grid-template-columns: 1fr;
+  }
 }

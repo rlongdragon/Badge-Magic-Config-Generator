@@ -1,19 +1,28 @@
 import { FIRMWARE_PROFILES, TRANSPORTS, uploadToBadge } from './uploader.js';
-import { showError } from './ui.js';
+import { checkTransport, markPermissionBlocked, listenForChanges } from './browser-support.js';
 
-const STORAGE_KEY = 'badge-upload-firmware';
+const STORAGE_KEY = 'badge-upload';
 
-function loadFirmware() {
+const STAGE_TEXT = {
+  ble: { choose: '請在跳出的視窗選擇徽章…', connect: '連線中…', send: '傳送中…' },
+  usb: { choose: '請在跳出的視窗選擇「LED Badge Magic」…', connect: '開啟裝置中…', send: '傳送中…' },
+};
+
+function loadPrefs() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved in FIRMWARE_PROFILES) return saved;
-  } catch (e) { /* storage unavailable */ }
-  return 'stock';
+    const prefs = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    return {
+      firmware: prefs.firmware in FIRMWARE_PROFILES ? prefs.firmware : 'stock',
+      transport: prefs.transport in TRANSPORTS ? prefs.transport : 'ble',
+    };
+  } catch (e) {
+    return { firmware: 'stock', transport: 'ble' };
+  }
 }
 
-function saveFirmware(firmware) {
+function savePrefs(prefs) {
   try {
-    localStorage.setItem(STORAGE_KEY, firmware);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
   } catch (e) { /* storage unavailable */ }
 }
 
@@ -24,109 +33,164 @@ function isCancelled(err) {
     || (err?.name === 'NotFoundError' && /cancel/i.test(err.message));
 }
 
-function describeError(err) {
+function isPermissionBlocked(err) {
+  return /permission|blocked/i.test(err?.message || '')
+    || (err?.name === 'SecurityError');
+}
+
+function describeError(err, transport) {
   const message = err?.message || String(err);
-  if (/permission/i.test(message)) {
-    return '瀏覽器封鎖了這個網站的藍牙權限。請在網址列左邊的網站設定把「藍牙」改成允許；Brave 還需要到 brave://flags 開啟 Web Bluetooth API。';
-  }
   if (/adapter/i.test(message)) {
     return '找不到藍牙介面卡，請確認電腦的藍牙已開啟。';
   }
   switch (err?.name) {
-    case 'SecurityError':
-      return '瀏覽器拒絕存取裝置，請確認網頁是用 HTTPS 開啟。';
+    case 'TimeoutError':
+      return `${message}。請確認徽章${transport === 'ble' ? '在藍牙模式並靠近電腦' : '已接上電腦'}，再試一次。`;
     case 'NetworkError':
-      return '連線中斷，請確認徽章在藍牙模式並靠近電腦後再試一次。';
+      return '連線中斷。請確認徽章在藍牙模式並靠近電腦，再試一次。';
+    case 'NotSupportedError':
+    case 'NotFoundError':
+      return '找不到徽章的上傳服務，請確認選擇的韌體正確。';
     case 'NotAllowedError':
-      return '無法開啟 USB 裝置，可能被其他程式佔用。';
+      return '無法開啟 USB 裝置，可能被其他程式佔用（例如 WSL / usbipd）。';
     default:
+      if (/GATT operation failed/i.test(message)) {
+        return '徽章拒絕了上傳。請確認選擇的韌體正確，並照上面的步驟讓徽章進入可上傳的狀態。';
+      }
       return message;
   }
+}
+
+function el(tag, props = {}, children = []) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children);
+  return node;
 }
 
 /** @param getMessages returns the `messages` array of the current JSON */
 export function initUploadPanel(getMessages) {
   const tabs = document.getElementById('firmware-tabs');
-  const firmwareNote = document.getElementById('firmware-note');
-  const pills = document.getElementById('transport-pills');
-  const transportNote = document.getElementById('transport-note');
+  const firmwareHint = document.getElementById('firmware-hint');
+  const transportOptions = document.getElementById('transport-options');
+  const alertBox = document.getElementById('upload-alert');
+  const steps = document.getElementById('upload-steps');
   const uploadBtn = document.getElementById('upload-btn');
+  const cancelBtn = document.getElementById('upload-cancel');
   const progress = document.getElementById('upload-progress');
   const progressBar = document.getElementById('upload-progress-bar');
   const status = document.getElementById('upload-status');
 
-  let firmware = loadFirmware();
-  let transport = 'ble';
-  let busy = false;
+  const prefs = loadPrefs();
+  let firmware = prefs.firmware;
+  let transport = prefs.transport;
+  let controller = null; // set while uploading
+  let stage = null;
+  let blockingProblem = false;
+  let checkSeq = 0;
 
-  function renderTransportNote() {
+  function setStatus(text, kind = '') {
+    status.textContent = text;
+    status.className = `upload-status${kind ? ` upload-status--${kind}` : ''}`;
+  }
+
+  function renderButtons() {
+    const busy = controller !== null;
+    uploadBtn.textContent = `用${TRANSPORTS[transport].label}上傳`;
+    uploadBtn.disabled = busy || blockingProblem;
+    uploadBtn.hidden = busy;
+    // The browser's device chooser cannot be closed from script
+    cancelBtn.hidden = !busy || stage === 'choose';
+    tabs.querySelectorAll('button').forEach((b) => { b.disabled = busy; });
+    transportOptions.querySelectorAll('input').forEach((i) => {
+      i.disabled = busy || i.dataset.unsupported === 'true';
+    });
+  }
+
+  async function renderAlert() {
+    const seq = ++checkSeq;
+    const problem = await checkTransport(transport);
+    if (seq !== checkSeq) return; // a newer check is running
+
+    blockingProblem = problem?.level === 'error';
+    alertBox.hidden = !problem;
+    alertBox.replaceChildren();
+    if (problem) {
+      alertBox.className = `upload-alert upload-alert--${problem.level}`;
+      alertBox.append(el('strong', { textContent: problem.title }));
+      problem.body.forEach((line) => alertBox.append(el('p', { textContent: line })));
+      if (problem.code) alertBox.append(el('code', { textContent: problem.code }));
+    }
+    renderButtons();
+  }
+
+  function renderSteps() {
     const options = FIRMWARE_PROFILES[firmware].transports[transport];
-    const info = TRANSPORTS[transport];
-    const supported = info.isSupported();
-
-    transportNote.textContent = supported
-      ? (options.timestamp ? '上傳時會同步徽章的時間。' : '不會同步時間。')
-      : info.unsupportedReason;
-    transportNote.classList.toggle('upload-note--warn', !supported);
-    uploadBtn.disabled = busy || !supported;
+    steps.replaceChildren(...options.steps.map((text) => el('li', { textContent: text })));
   }
 
   function renderTransports() {
-    const available = Object.keys(FIRMWARE_PROFILES[firmware].transports);
-    if (!available.includes(transport)) transport = available[0];
+    const profile = FIRMWARE_PROFILES[firmware];
+    if (!profile.transports[transport]) transport = Object.keys(profile.transports)[0];
 
-    pills.innerHTML = '';
-    available.forEach((key) => {
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = 'transport';
-      input.id = `transport-${key}`;
-      input.value = key;
-      input.checked = key === transport;
+    transportOptions.replaceChildren();
+    Object.entries(TRANSPORTS).forEach(([key, info]) => {
+      const options = profile.transports[key];
+      const meta = options
+        ? (options.timestamp ? '會同步時間' : '不同步時間')
+        : profile.unsupported?.[key] ?? '不支援';
+
+      const input = el('input', {
+        type: 'radio',
+        name: 'transport',
+        id: `transport-${key}`,
+        value: key,
+        checked: key === transport,
+      });
+      input.dataset.unsupported = String(!options);
       input.addEventListener('change', () => {
         transport = key;
-        renderTransportNote();
+        savePrefs({ firmware, transport });
+        setStatus('');
+        renderSteps();
+        renderAlert();
       });
 
-      const label = document.createElement('label');
-      label.htmlFor = input.id;
-      label.textContent = TRANSPORTS[key].label;
-      pills.append(input, label);
+      const label = el('label', { htmlFor: input.id, className: 'transport-option' }, [
+        el('span', { className: 'transport-option__name', textContent: info.label }),
+        el('span', { className: 'transport-option__meta', textContent: meta }),
+      ]);
+      transportOptions.append(input, label);
     });
-    renderTransportNote();
+
+    renderSteps();
+    renderAlert();
   }
 
   function renderFirmware() {
     tabs.querySelectorAll('button').forEach((btn) => {
       const selected = btn.dataset.firmware === firmware;
       btn.classList.toggle('active', selected);
-      btn.setAttribute('aria-selected', selected);
+      btn.setAttribute('aria-selected', String(selected));
     });
 
     const profile = FIRMWARE_PROFILES[firmware];
-    firmwareNote.textContent = profile.note + ' ';
+    firmwareHint.replaceChildren(profile.hint);
     if (profile.link) {
-      const a = document.createElement('a');
-      a.href = profile.link;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.textContent = '韌體原始碼';
-      firmwareNote.append(a);
+      firmwareHint.append(' ', el('a', {
+        href: profile.link, target: '_blank', rel: 'noopener', textContent: '韌體原始碼',
+      }));
     }
     renderTransports();
   }
 
   Object.entries(FIRMWARE_PROFILES).forEach(([key, profile]) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.setAttribute('role', 'tab');
+    const btn = el('button', { type: 'button', textContent: profile.label });
     btn.dataset.firmware = key;
-    btn.textContent = profile.label;
+    btn.setAttribute('role', 'tab');
     btn.addEventListener('click', () => {
-      if (busy) return;
       firmware = key;
-      saveFirmware(key);
-      status.textContent = '';
+      savePrefs({ firmware, transport });
+      setStatus('');
       renderFirmware();
     });
     tabs.append(btn);
@@ -135,37 +199,54 @@ export function initUploadPanel(getMessages) {
   uploadBtn.addEventListener('click', async () => {
     const messages = getMessages();
     if (!messages || messages.every((m) => m.text.length === 0)) {
-      showError('沒有可上傳的內容！');
+      setStatus('沒有可上傳的內容，請先輸入文字或選擇圖片。', 'error');
       return;
     }
 
-    busy = true;
-    uploadBtn.disabled = true;
-    progress.hidden = false;
+    const options = FIRMWARE_PROFILES[firmware].transports[transport];
+    controller = new AbortController();
+    renderButtons();
+    progress.hidden = true;
     progressBar.style.width = '0%';
-    status.textContent = transport === 'ble' ? '請在跳出的視窗選擇徽章…' : '請在跳出的視窗選擇 USB 裝置…';
 
     try {
-      await uploadToBadge(messages, firmware, transport, (ratio) => {
-        status.textContent = '上傳中…';
-        progressBar.style.width = `${Math.round(ratio * 100)}%`;
+      await uploadToBadge(messages, firmware, transport, {
+        signal: controller.signal,
+        onStage: (s) => {
+          stage = s;
+          setStatus(STAGE_TEXT[transport][s]);
+          progress.hidden = s !== 'send';
+          renderButtons();
+        },
+        onProgress: (sent, total) => {
+          setStatus(`傳送中… ${sent} / ${total}`);
+          progressBar.style.width = `${Math.round((sent / total) * 100)}%`;
+        },
       });
-      status.textContent = firmware === 'stock'
-        ? '上傳完成！'
-        : '上傳完成！在徽章選單選 ANIMATION 就能看到。';
+      const parts = ['上傳完成！'];
+      if (firmware !== 'stock') parts.push('在徽章選單選 ANIMATION 播放。');
+      if (options.timestamp) parts.push('徽章的時間也已同步。');
+      setStatus(parts.join(''), 'success');
     } catch (err) {
       if (isCancelled(err)) {
-        status.textContent = '已取消。';
+        setStatus('已取消。');
+      } else if (isPermissionBlocked(err)) {
+        markPermissionBlocked(transport);
+        setStatus('上傳失敗：瀏覽器封鎖了權限，請看上方的說明。', 'error');
+        await renderAlert();
       } else {
-        status.textContent = '';
-        showError(`上傳失敗：${describeError(err)}`);
+        setStatus(`上傳失敗：${describeError(err, transport)}`, 'error');
       }
     } finally {
-      busy = false;
+      controller = null;
+      stage = null;
       progress.hidden = true;
-      renderTransportNote();
+      renderButtons();
     }
   });
 
+  cancelBtn.addEventListener('click', () => controller?.abort());
+
+  listenForChanges(() => renderAlert());
   renderFirmware();
 }
