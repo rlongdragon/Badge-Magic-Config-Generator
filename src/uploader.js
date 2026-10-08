@@ -22,13 +22,13 @@ export const FIRMWARE_PROFILES = {
   },
   official: {
     label: '官方最新版',
-    note: 'fossasia/badgemagic-firmware 最新版。上傳前先在徽章選單選 BT-PAIRING，上傳後選 ANIMATION 播放。',
+    note: 'fossasia/badgemagic-firmware 最新版。上傳後在選單選 ANIMATION 播放。注意：官方版關閉 PIN 時藍牙上傳會失敗，請先在選單 SECURITY 選 ENABLE，進 BT-PAIRING 後按 KEY4（2 鍵版長按 KEY1）略過 PIN，再按上傳。',
     link: 'https://github.com/fossasia/badgemagic-firmware',
     transports: { ble: { timestamp: true }, usb: { timestamp: false } },
   },
   rlong: {
     label: 'rlong 版',
-    note: '在官方最新版上加了防頻閃，USB 上傳也會同步時間。操作方式同官方最新版。',
+    note: '在官方最新版上加了防頻閃，修正了藍牙上傳的 bug，USB 上傳也會同步時間。上傳前先在徽章選單選 BT-PAIRING，上傳後選 ANIMATION 播放。',
     link: 'https://github.com/rlongdragon/badgemagic-firmware/tree/rlong/feature',
     transports: { ble: { timestamp: true }, usb: { timestamp: true } },
   },
