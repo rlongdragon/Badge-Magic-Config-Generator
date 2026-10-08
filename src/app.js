@@ -3,6 +3,7 @@ import { analyzeText } from './text-processor.js';
 import { handleImageFile } from './image-processor.js';
 import { convertMatrixToHexDisplay } from './matrix-converter.js';
 import { updateJsonOutput, updateMarqueePreview, updateTextPreview, showError } from './ui.js';
+import { initUploadPanel } from './upload-ui.js';
 
 document.addEventListener("DOMContentLoaded", () => {
     // --- DOM Elements ---
@@ -21,6 +22,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const speedValue = document.getElementById("speed-value");
     const downloadBtn = document.getElementById("download-btn");
     const previewControls = document.querySelector(".preview-controls");
+
+    // Latest exported data, shared by the JSON download and direct upload
+    let latestData = null;
+    function setOutput(data) {
+        latestData = data;
+        updateJsonOutput(data);
+    }
 
     // --- Main Logic ---
     function processAndRender() {
@@ -42,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update JSON Output
         const hexData = convertMatrixToHexDisplay(appState.matrix, appState.direction, appState.speed);
-        updateJsonOutput(hexData);
+        setOutput(hexData);
     }
 
     // --- Event Listeners ---
@@ -104,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
         appState.matrix = matrix;
         updateMarqueePreview(matrix); // Always show marquee for image
         const hexData = convertMatrixToHexDisplay(matrix, appState.direction, appState.speed);
-        updateJsonOutput(hexData);
+        setOutput(hexData);
     };
 
     imageDropZone.addEventListener('click', () => imageInput.click());
@@ -161,6 +169,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     });
+
+    initUploadPanel(() => latestData?.messages);
 
     // --- Initial Load ---
     document.fonts.ready.then(() => {

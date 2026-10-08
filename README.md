@@ -21,6 +21,20 @@
 3.  **調整參數**: 根據您的喜好，設定跑馬燈的「方向」和「速度」。
 4.  **預覽效果**: 在預覽區塊查看您的設定在硬體上的模擬效果。
 5.  **下載設定**: 點擊「下載 JSON」按鈕，即可獲得設定檔。
+6.  **直接上傳**（不用透過 App）: 在「直接上傳到徽章」選擇徽章的韌體與傳輸方式，按「上傳」。
+
+## 直接上傳
+
+| 韌體 | 藍牙 | USB |
+|---|---|---|
+| 未刷 / 舊版開源韌體 | ✓（不同步時間） | ✗ |
+| 官方最新版 | ✓（同步時間） | ✓（不同步時間） |
+| [rlong 版](https://github.com/rlongdragon/badgemagic-firmware/tree/rlong/feature) | ✓（同步時間） | ✓（同步時間） |
+
+- 藍牙使用 Web Bluetooth：桌機或 Android 的 Chrome / Edge。iOS 與 Firefox 不支援。
+- USB 使用 WebHID：桌機的 Chrome / Edge。
+- 開源韌體要先在徽章選單選 **BT-PAIRING** 才能用藍牙上傳，上傳後選 **ANIMATION** 播放。
+- 上傳格式與 Badge Magic App 相同（`"wang"` header + 每 8 欄 11 bytes 的點陣），藍牙每包 16 bytes，USB 每個 report 64 bytes。
 
 ## 開發設定
 

@@ -85,6 +85,22 @@
       </section>
 
       <button id="download-btn">下載 JSON</button>
+
+      <section class="upload-container">
+        <h2>直接上傳到徽章</h2>
+        <div class="firmware-tabs" id="firmware-tabs" role="tablist"></div>
+        <p class="upload-note" id="firmware-note"></p>
+        <div class="controls-container__group">
+          <label>傳輸方式:</label>
+          <div class="radio-pills" id="transport-pills"></div>
+        </div>
+        <p class="upload-note" id="transport-note"></p>
+        <button id="upload-btn">上傳</button>
+        <div class="upload-progress" id="upload-progress" hidden>
+          <div class="upload-progress__bar" id="upload-progress-bar"></div>
+        </div>
+        <p class="upload-status" id="upload-status" role="status"></p>
+      </section>
     </main>
 
     <script type="module" src="src/app.js"></script>
